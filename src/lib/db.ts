@@ -1,26 +1,8 @@
-import { Pool } from "pg";
+import { createClient } from "@supabase/supabase-js";
 
-function parseConnectionString(connStr: string) {
-  const match = connStr.match(
-    /^postgresql:\/\/([^:]+):(.+)@([^:]+):(\d+)\/(.+)$/
-  );
-  if (!match) {
-    return { connectionString: connStr, ssl: { rejectUnauthorized: false } };
-  }
-  return {
-    user: match[1],
-    password: match[2],
-    host: match[3],
-    port: parseInt(match[4]),
-    database: match[5],
-    ssl: { rejectUnauthorized: false },
-  };
-}
-
-const pool = new Pool(
-  parseConnectionString(
-    process.env.NEXT_PUBLIC_SUPABASE_CONNECTION_STRING || ""
-  )
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
 export async function saveEvaluation(
@@ -29,10 +11,16 @@ export async function saveEvaluation(
   comment: string,
   priceExpectation: number | null
 ) {
-  await pool.query(
-    "INSERT INTO evaluations (roll_number, rating, comment, price_expectation) VALUES ($1, $2, $3, $4)",
-    [rollNumber, rating, comment, priceExpectation]
-  );
+  const { error } = await supabase.from("evaluations").insert({
+    roll_number: rollNumber,
+    rating,
+    comment,
+    price_expectation: priceExpectation,
+  });
+
+  if (error) {
+    throw new Error(`Failed to save evaluation: ${error.message}`);
+  }
 }
 
 export interface EvaluationStats {
@@ -48,28 +36,53 @@ export async function getEvaluationStats(
 ): Promise<Map<string, EvaluationStats>> {
   if (rollNumbers.length === 0) return new Map();
 
-  const placeholders = rollNumbers.map((_, i) => `$${i + 1}`).join(",");
-  const result = await pool.query(
-    `SELECT roll_number,
-            ROUND(AVG(rating)::numeric, 1) as avg_rating,
-            ROUND(AVG(price_expectation)::numeric, 0) as avg_price,
-            COUNT(*)::int as count,
-            COUNT(price_expectation)::int as price_count
-     FROM evaluations
-     WHERE roll_number IN (${placeholders})
-     GROUP BY roll_number`,
-    rollNumbers
-  );
+  const { data, error } = await supabase
+    .from("evaluations")
+    .select("roll_number, rating, price_expectation")
+    .in("roll_number", rollNumbers);
+
+  if (error) {
+    throw new Error(`Failed to fetch evaluations: ${error.message}`);
+  }
+
+  // Aggregate in JS since Supabase REST API doesn't support GROUP BY
+  const grouped = new Map<
+    string,
+    { ratings: number[]; prices: number[] }
+  >();
+
+  for (const row of data || []) {
+    if (!grouped.has(row.roll_number)) {
+      grouped.set(row.roll_number, { ratings: [], prices: [] });
+    }
+    const group = grouped.get(row.roll_number)!;
+    group.ratings.push(row.rating);
+    if (row.price_expectation != null) {
+      group.prices.push(row.price_expectation);
+    }
+  }
 
   const map = new Map<string, EvaluationStats>();
-  for (const row of result.rows) {
-    map.set(row.roll_number, {
-      roll_number: row.roll_number,
-      avg_rating: parseFloat(row.avg_rating),
-      avg_price: row.avg_price ? parseFloat(row.avg_price) : null,
-      count: row.count,
-      price_count: row.price_count,
+  for (const [rollNumber, group] of grouped) {
+    const avgRating =
+      Math.round(
+        (group.ratings.reduce((a, b) => a + b, 0) / group.ratings.length) * 10
+      ) / 10;
+    const avgPrice =
+      group.prices.length > 0
+        ? Math.round(
+            group.prices.reduce((a, b) => a + b, 0) / group.prices.length
+          )
+        : null;
+
+    map.set(rollNumber, {
+      roll_number: rollNumber,
+      avg_rating: avgRating,
+      avg_price: avgPrice,
+      count: group.ratings.length,
+      price_count: group.prices.length,
     });
   }
+
   return map;
 }
