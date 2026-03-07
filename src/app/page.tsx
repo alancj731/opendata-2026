@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 
 export default function Home() {
   const router = useRouter();
-  const [neighbourhoods, setNeighbourhoods] = useState<string[]>([]);
+  const [regions, setRegions] = useState<string[]>([]);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function Home() {
       .then((res) => res.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
-        setNeighbourhoods(json.data);
+        setRegions(json.data);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -34,7 +34,7 @@ export default function Home() {
 
   const handleStart = () => {
     if (selected) {
-      router.push(`/evaluate?neighbourhood=${encodeURIComponent(selected)}`);
+      router.push(`/evaluate?region=${encodeURIComponent(selected)}`);
     }
   };
 
@@ -55,7 +55,7 @@ export default function Home() {
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/80">
             Explore, compare, and evaluate residential properties across
-            Winnipeg neighbourhoods using open assessment data, Google Street
+            Winnipeg market regions using open assessment data, Google Street
             View, and AI-powered analysis.
           </p>
         </div>
@@ -78,10 +78,10 @@ export default function Home() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">
-                  Select a Neighbourhood
+                  Select a Market Region
                 </CardTitle>
                 <CardDescription>
-                  Choose a neighbourhood to randomly explore 10 properties with
+                  Choose a market region to randomly explore 10 properties with
                   Street View imagery and AI-powered insights.
                 </CardDescription>
               </CardHeader>
@@ -95,7 +95,7 @@ export default function Home() {
 
                 {error && (
                   <p className="text-sm text-destructive">
-                    Failed to load neighbourhoods: {error}
+                    Failed to load market regions: {error}
                   </p>
                 )}
 
@@ -106,10 +106,10 @@ export default function Home() {
                       onChange={(e) => setSelected(e.target.value)}
                       className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <option value="">Choose a neighbourhood...</option>
-                      {neighbourhoods.map((n) => (
+                      <option value="">Choose a market region...</option>
+                      {regions.map((n) => (
                         <option key={n} value={n}>
-                          {n}
+                          {n.replace(/^\d+,\s*/, "")}
                         </option>
                       ))}
                     </select>
@@ -139,7 +139,7 @@ export default function Home() {
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003C6E] text-xs font-bold text-white">
                       1
                     </span>
-                    <span>Pick a neighbourhood from the dropdown</span>
+                    <span>Pick a market region from the dropdown</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003C6E] text-xs font-bold text-white">

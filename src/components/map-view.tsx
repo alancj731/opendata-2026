@@ -56,7 +56,7 @@ export function MapView({ properties }: MapViewProps) {
       />
       <div className="bg-muted/50 px-4 py-2 text-xs text-muted-foreground">
         Showing {validProperties.length} properties near{" "}
-        {validProperties[0]?.neighbourhood_area || "selected area"}
+        {validProperties[0]?.market_region || "selected area"}
       </div>
     </div>
   );

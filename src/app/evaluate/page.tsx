@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 function EvaluateContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const neighbourhood = searchParams.get("neighbourhood") || "";
+  const region = searchParams.get("region") || "";
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [evaluations, setEvaluations] = useState<Map<string, Evaluation>>(
@@ -23,10 +23,10 @@ function EvaluateContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!neighbourhood) return;
+    if (!region) return;
     setLoading(true);
     fetch(
-      `/api/properties?neighbourhood=${encodeURIComponent(neighbourhood)}&count=10`
+      `/api/properties?region=${encodeURIComponent(region)}&count=10`
     )
       .then((res) => res.json())
       .then((json) => {
@@ -35,7 +35,7 @@ function EvaluateContent() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [neighbourhood]);
+  }, [region]);
 
   const handleEvaluate = useCallback((evaluation: Evaluation) => {
     setEvaluations((prev) => {
@@ -48,11 +48,11 @@ function EvaluateContent() {
   const evaluatedCount = evaluations.size;
   const totalCount = properties.length;
 
-  if (!neighbourhood) {
+  if (!region) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">No neighbourhood selected.</p>
+          <p className="text-muted-foreground">No market region selected.</p>
           <Button className="mt-4" onClick={() => router.push("/")}>
             Go Back
           </Button>
@@ -66,7 +66,7 @@ function EvaluateContent() {
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div>
-            <h1 className="text-xl font-bold">{neighbourhood}</h1>
+            <h1 className="text-xl font-bold">{region.replace(/^\d+,\s*/, "")}</h1>
             <p className="text-sm text-muted-foreground">
               {evaluatedCount}/{totalCount} properties evaluated
             </p>

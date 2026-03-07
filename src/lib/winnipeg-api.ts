@@ -32,30 +32,30 @@ function buildV3Url(pageNumber: number, pageSize: number): string {
   return url.toString();
 }
 
-export async function getNeighbourhoods(): Promise<string[]> {
+export async function getMarketRegions(): Promise<string[]> {
   const url = buildSodaUrl({
-    $select: "neighbourhood_area",
-    $group: "neighbourhood_area",
-    $order: "neighbourhood_area ASC",
+    $select: "market_region",
+    $group: "market_region",
+    $order: "market_region ASC",
     $limit: "500",
-    $where: "neighbourhood_area IS NOT NULL",
+    $where: "market_region IS NOT NULL",
   });
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) {
-    throw new Error(`Failed to fetch neighbourhoods: ${res.statusText}`);
+    throw new Error(`Failed to fetch market regions: ${res.statusText}`);
   }
 
-  const data: Array<{ neighbourhood_area: string }> = await res.json();
-  return data.map((d) => d.neighbourhood_area).filter(Boolean);
+  const data: Array<{ market_region: string }> = await res.json();
+  return data.map((d) => d.market_region).filter(Boolean);
 }
 
-export async function fetchPropertiesByArea(
-  neighbourhood: string,
+export async function fetchPropertiesByRegion(
+  region: string,
   limit: number = 100
 ): Promise<Property[]> {
   const url = buildSodaUrl({
-    $where: `neighbourhood_area='${neighbourhood.replace(/'/g, "''")}'`,
+    $where: `market_region='${region.replace(/'/g, "''")}'`,
     $limit: String(limit),
     $order: "roll_number ASC",
   });
@@ -82,10 +82,10 @@ export async function fetchPropertiesPage(
 }
 
 export async function getRandomProperties(
-  neighbourhood: string,
+  region: string,
   count: number = 10
 ): Promise<Property[]> {
-  const pool = await fetchPropertiesByArea(neighbourhood, 200);
+  const pool = await fetchPropertiesByRegion(region, 200);
 
   if (pool.length <= count) {
     return pool;

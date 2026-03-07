@@ -25,7 +25,7 @@ export async function analyzeProperties(
     living_area: p.total_living_area,
     rooms: p.rooms,
     zoning: p.zoning,
-    neighbourhood: p.neighbourhood_area,
+    market_region: p.market_region,
     basement: p.basement,
     garage: p.attached_garage === "Yes" ? "Attached" : p.detached_garage === "Yes" ? "Detached" : "None",
     pool: p.pool,
