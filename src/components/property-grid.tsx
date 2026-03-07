@@ -1,15 +1,21 @@
 "use client";
 
 import { Property, Evaluation } from "@/lib/types";
-import { PropertyCard } from "./property-card";
+import { PropertyCard, EvaluationStats } from "./property-card";
 
 interface PropertyGridProps {
   properties: Property[];
   onEvaluate: (evaluation: Evaluation) => void;
   selectedRollNumber?: string;
+  evaluationStats?: Record<string, EvaluationStats>;
 }
 
-export function PropertyGrid({ properties, onEvaluate, selectedRollNumber }: PropertyGridProps) {
+export function PropertyGrid({
+  properties,
+  onEvaluate,
+  selectedRollNumber,
+  evaluationStats,
+}: PropertyGridProps) {
   if (properties.length === 0) {
     return (
       <div className="py-12 text-center text-muted-foreground">
@@ -31,6 +37,11 @@ export function PropertyGrid({ properties, onEvaluate, selectedRollNumber }: Pro
               ? property.roll_number === selectedRollNumber
                 ? "selected"
                 : "nearby"
+              : undefined
+          }
+          previousStats={
+            evaluationStats
+              ? evaluationStats[property.roll_number] || null
               : undefined
           }
         />

@@ -9,6 +9,7 @@ import { MapView } from "@/components/map-view";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { EvaluationStats } from "@/components/property-card";
 
 function EvaluateContent() {
   const searchParams = useSearchParams();
@@ -22,15 +23,37 @@ function EvaluateContent() {
   const address = searchParams.get("address") || "";
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [evaluationStats, setEvaluationStats] = useState<
+    Record<string, EvaluationStats>
+  >({});
   const [evaluations, setEvaluations] = useState<Map<string, Evaluation>>(
     new Map()
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch evaluation stats once properties are loaded
+  const fetchEvaluationStats = useCallback(
+    async (props: Property[]) => {
+      if (props.length === 0) return;
+      const rolls = props.map((p) => p.roll_number).join(",");
+      try {
+        const res = await fetch(
+          `/api/evaluations?rolls=${encodeURIComponent(rolls)}`
+        );
+        const json = await res.json();
+        if (json.data) {
+          setEvaluationStats(json.data);
+        }
+      } catch {
+        // Non-critical, just leave stats empty
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     if (mode === "address" && lat && lon && rollNumber) {
-      // Address search mode: fetch the selected property + 9 nearby
       setLoading(true);
       Promise.all([
         fetch(`/api/search?q=${encodeURIComponent(address)}`).then((r) =>
@@ -45,11 +68,9 @@ function EvaluateContent() {
             (p) => p.roll_number === rollNumber
           );
           const nearby: Property[] = nearbyJson.data || [];
-          if (selected) {
-            setProperties([selected, ...nearby]);
-          } else {
-            setProperties(nearby);
-          }
+          const all = selected ? [selected, ...nearby] : nearby;
+          setProperties(all);
+          fetchEvaluationStats(all);
         })
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
@@ -62,13 +83,14 @@ function EvaluateContent() {
         .then((json) => {
           if (json.error) throw new Error(json.error);
           setProperties(json.data);
+          fetchEvaluationStats(json.data);
         })
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [mode, region, rollNumber, lat, lon, address]);
+  }, [mode, region, rollNumber, lat, lon, address, fetchEvaluationStats]);
 
   const handleEvaluate = useCallback((evaluation: Evaluation) => {
     setEvaluations((prev) => {
@@ -99,9 +121,7 @@ function EvaluateContent() {
   }
 
   const title =
-    mode === "address"
-      ? address
-      : region.replace(/^\d+,\s*/, "");
+    mode === "address" ? address : region.replace(/^\d+,\s*/, "");
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,6 +182,7 @@ function EvaluateContent() {
               properties={properties}
               onEvaluate={handleEvaluate}
               selectedRollNumber={mode === "address" ? rollNumber : undefined}
+              evaluationStats={evaluationStats}
             />
 
             <Separator />
