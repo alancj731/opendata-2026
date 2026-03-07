@@ -170,12 +170,12 @@ export default function Home() {
                     </span>
                     <span>Rate and evaluate each property</span>
                   </li>
-                  <li className="flex gap-3">
+                  {/* <li className="flex gap-3">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003C6E] text-xs font-bold text-white">
                       4
                     </span>
                     <span>Get AI-powered analysis from Gemini</span>
-                  </li>
+                  </li> */}
                 </ol>
               </CardContent>
             </Card>
