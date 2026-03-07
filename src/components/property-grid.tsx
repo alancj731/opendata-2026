@@ -1,13 +1,14 @@
 "use client";
 
 import { Property, Evaluation } from "@/lib/types";
-import { PropertyCard, EvaluationStats } from "./property-card";
+import { PropertyCard, EvaluationStats, SalesRecord } from "./property-card";
 
 interface PropertyGridProps {
   properties: Property[];
   onEvaluate: (evaluation: Evaluation) => void;
   selectedRollNumber?: string;
   evaluationStats?: Record<string, EvaluationStats>;
+  salesData?: Record<string, SalesRecord[]>;
 }
 
 export function PropertyGrid({
@@ -15,6 +16,7 @@ export function PropertyGrid({
   onEvaluate,
   selectedRollNumber,
   evaluationStats,
+  salesData,
 }: PropertyGridProps) {
   if (properties.length === 0) {
     return (
@@ -42,6 +44,11 @@ export function PropertyGrid({
           previousStats={
             evaluationStats
               ? evaluationStats[property.roll_number] || null
+              : undefined
+          }
+          salesHistory={
+            salesData
+              ? salesData[property.roll_number] || null
               : undefined
           }
         />

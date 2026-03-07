@@ -86,3 +86,55 @@ export async function getEvaluationStats(
 
   return map;
 }
+
+export interface SalesRecord {
+  sale_price: number;
+  sale_year: number;
+  sale_month: number;
+  time_adjusted_sale_price: number | null;
+}
+
+export async function getSalesData(
+  rollNumbers: string[]
+): Promise<Map<string, SalesRecord[]>> {
+  if (rollNumbers.length === 0) return new Map();
+
+  // Winnipeg API returns roll numbers with leading zeros (e.g. "08005124800")
+  // but the sales table stores them without (e.g. "8005124800").
+  // Query both formats to ensure matches.
+  const stripped = rollNumbers.map((r) => r.replace(/^0+/, ""));
+  const allVariants = [...new Set([...rollNumbers, ...stripped])];
+
+  const { data, error } = await supabase
+    .from("sales")
+    .select("roll_number, sale_price, sale_year, sale_month, time_adjusted_sale_price")
+    .in("roll_number", allVariants)
+    .order("sale_year", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch sales: ${error.message}`);
+  }
+
+  // Build a lookup from stripped roll number back to original (with leading zeros)
+  const strippedToOriginal = new Map<string, string>();
+  for (const r of rollNumbers) {
+    strippedToOriginal.set(r.replace(/^0+/, ""), r);
+  }
+
+  const map = new Map<string, SalesRecord[]>();
+  for (const row of data || []) {
+    // Map back to the original roll number format the caller used
+    const key = strippedToOriginal.get(row.roll_number) || row.roll_number;
+    if (!map.has(key)) {
+      map.set(key, []);
+    }
+    map.get(key)!.push({
+      sale_price: row.sale_price,
+      sale_year: row.sale_year,
+      sale_month: row.sale_month,
+      time_adjusted_sale_price: row.time_adjusted_sale_price,
+    });
+  }
+
+  return map;
+}

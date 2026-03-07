@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveEvaluation, getEvaluationStats } from "@/lib/db";
+import { saveEvaluation, getEvaluationStats, getSalesData } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,10 +38,14 @@ export async function GET(request: NextRequest) {
     }
 
     const rolls = rollNumbers.split(",").filter(Boolean);
-    const stats = await getEvaluationStats(rolls);
+    const [stats, sales] = await Promise.all([
+      getEvaluationStats(rolls),
+      getSalesData(rolls),
+    ]);
     const data = Object.fromEntries(stats);
+    const salesData = Object.fromEntries(sales);
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data, sales: salesData });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to fetch evaluations";

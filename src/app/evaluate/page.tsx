@@ -9,7 +9,7 @@ import { MapView } from "@/components/map-view";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { EvaluationStats } from "@/components/property-card";
+import { EvaluationStats, SalesRecord } from "@/components/property-card";
 
 function EvaluateContent() {
   const searchParams = useSearchParams();
@@ -25,6 +25,9 @@ function EvaluateContent() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [evaluationStats, setEvaluationStats] = useState<
     Record<string, EvaluationStats>
+  >({});
+  const [salesData, setSalesData] = useState<
+    Record<string, SalesRecord[]>
   >({});
   const [evaluations, setEvaluations] = useState<Map<string, Evaluation>>(
     new Map()
@@ -44,6 +47,9 @@ function EvaluateContent() {
         const json = await res.json();
         if (json.data) {
           setEvaluationStats(json.data);
+        }
+        if (json.sales) {
+          setSalesData(json.sales);
         }
       } catch {
         // Non-critical, just leave stats empty
@@ -183,6 +189,7 @@ function EvaluateContent() {
               onEvaluate={handleEvaluate}
               selectedRollNumber={mode === "address" ? rollNumber : undefined}
               evaluationStats={evaluationStats}
+              salesData={salesData}
             />
 
             <Separator />

@@ -22,12 +22,20 @@ export interface EvaluationStats {
   price_count: number;
 }
 
+export interface SalesRecord {
+  sale_price: number;
+  sale_year: number;
+  sale_month: number;
+  time_adjusted_sale_price: number | null;
+}
+
 interface PropertyCardProps {
   property: Property;
   index: number;
   onEvaluate: (evaluation: Evaluation) => void;
   label?: "selected" | "nearby";
   previousStats?: EvaluationStats | null;
+  salesHistory?: SalesRecord[] | null;
 }
 
 export function PropertyCard({
@@ -36,6 +44,7 @@ export function PropertyCard({
   onEvaluate,
   label,
   previousStats,
+  salesHistory,
 }: PropertyCardProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -77,6 +86,16 @@ export function PropertyCard({
     ? `$${Number(property.total_proposed_assessment_value).toLocaleString()}`
     : null;
 
+  const assessedNum = property.total_assessed_value
+    ? Number(property.total_assessed_value)
+    : null;
+  const rawProposed = property.total_proposed_assessment_value
+    ? Number(property.total_proposed_assessment_value)
+    : null;
+  const proposedNum = rawProposed && rawProposed > 0 ? rawProposed : null;
+  const valueDiff =
+    assessedNum != null && proposedNum != null ? proposedNum - assessedNum : null;
+
   return (
     <Card
       className={`overflow-hidden ${label === "selected" ? "ring-2 ring-[#003C6E]" : ""}`}
@@ -110,7 +129,9 @@ export function PropertyCard({
             <CardDescription>Property #{index + 1}</CardDescription>
             <CardTitle className="text-lg">{property.full_address}</CardTitle>
           </div>
-          <Badge variant="secondary">{assessedValue}</Badge>
+          {assessedNum == null && (
+            <Badge variant="secondary">{assessedValue}</Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -187,13 +208,73 @@ export function PropertyCard({
               <span className="font-medium">{property.zoning}</span>
             </div>
           )}
-          {proposedValue && (
-            <div>
-              <span className="text-muted-foreground">Proposed: </span>
-              <span className="font-medium">{proposedValue}</span>
-            </div>
-          )}
         </div>
+
+        {/* Assessment Value Comparison */}
+        {assessedNum != null && (
+          <div className="rounded-md border px-3 py-2 text-sm space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Current Assessed</span>
+              <span className="font-medium">{assessedValue}</span>
+            </div>
+            {proposedNum != null ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Proposed (2027+)</span>
+                  <span className="font-medium">{proposedValue}</span>
+                </div>
+                <div className="border-t pt-1.5 flex items-center justify-between">
+                  <span className="text-muted-foreground text-xs">
+                    Change after 2027
+                  </span>
+                  <span
+                    className={`font-semibold ${
+                      valueDiff! > 0
+                        ? "text-red-600"
+                        : valueDiff! < 0
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {valueDiff! > 0 ? "+" : ""}
+                    ${Math.abs(valueDiff!).toLocaleString()}
+                    {assessedNum > 0 && (
+                      <span className="ml-1 text-xs font-normal">
+                        ({valueDiff! > 0 ? "+" : ""}
+                        {((valueDiff! / assessedNum) * 100).toFixed(1)}%)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  Tax basis changes from current assessed to proposed value in 2027.
+                </p>
+              </>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Proposed (2027+)</span>
+                <span className="text-muted-foreground italic">No estimation yet</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sales History */}
+        {salesHistory && salesHistory.length > 0 && (
+          <div className="rounded-md border border-blue-200 bg-blue-50/50 px-3 py-2 text-sm space-y-1.5">
+            <p className="font-medium text-blue-900">Recent Sales</p>
+            {salesHistory.map((sale, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  {sale.sale_year}/{String(sale.sale_month).padStart(2, "0")}
+                </span>
+                <span className="font-semibold text-blue-700">
+                  ${sale.sale_price.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Evaluation */}
         <div className="border-t pt-3">
