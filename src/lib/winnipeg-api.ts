@@ -4,7 +4,7 @@ const SODA_URL = "https://data.winnipeg.ca/resource/d4mq-wa44.json";
 const V3_URL = "https://data.winnipeg.ca/api/v3/views/d4mq-wa44/query.json";
 
 function getAppToken(): string {
-  return process.env.WINNIPEG_DATA_APP_TOKEN || "";
+  return process.env.NEXT_PUBLIC_WINNIPEG_DATA_APP_TOKEN || "";
 }
 
 /** SODA2 endpoint — supports SoQL ($where, $select, $group, etc.) */

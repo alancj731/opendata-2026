@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Property } from "./types";
 
 function getClient() {
-  const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY;
   if (!apiKey || apiKey === "your_gemini_api_key_here") {
-    throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
+    throw new Error("NEXT_PUBLIC_GOOGLE_GEMINI_API_KEY is not configured");
   }
   return new GoogleGenerativeAI(apiKey);
 }
