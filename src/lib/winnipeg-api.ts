@@ -81,6 +81,71 @@ export async function fetchPropertiesPage(
   return res.json();
 }
 
+export async function searchByAddress(
+  query: string,
+  limit: number = 20
+): Promise<Property[]> {
+  const url = buildSodaUrl({
+    $where: `upper(full_address) like upper('%${query.replace(/'/g, "''")}%')`,
+    $limit: String(limit),
+    $order: "full_address ASC",
+  });
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to search properties: ${res.statusText}`);
+  }
+
+  return res.json();
+}
+
+export async function getNearbyProperties(
+  lat: number,
+  lon: number,
+  excludeRollNumber: string,
+  count: number = 9
+): Promise<Property[]> {
+  // Fetch properties within ~1km radius, sorted by distance
+  const radius = 0.01; // ~1km in degrees
+  const url = buildSodaUrl({
+    $where: `centroid_lat between '${lat - radius}' and '${lat + radius}' and centroid_lon between '${lon - radius}' and '${lon + radius}' and roll_number != '${excludeRollNumber.replace(/'/g, "''")}'`,
+    $limit: "100",
+  });
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch nearby properties: ${res.statusText}`);
+  }
+
+  const properties: Property[] = await res.json();
+
+  // Sort by distance and pick closest ones
+  const sorted = properties
+    .filter((p) => p.centroid_lat && p.centroid_lon)
+    .sort((a, b) => {
+      const distA = Math.hypot(
+        Number(a.centroid_lat) - lat,
+        Number(a.centroid_lon) - lon
+      );
+      const distB = Math.hypot(
+        Number(b.centroid_lat) - lat,
+        Number(b.centroid_lon) - lon
+      );
+      return distA - distB;
+    });
+
+  if (sorted.length <= count) return sorted;
+
+  // Randomly pick from closest 30 to add variety
+  const pool = sorted.slice(0, Math.min(30, sorted.length));
+  const shuffled = [...pool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
+
 export async function getRandomProperties(
   region: string,
   count: number = 10

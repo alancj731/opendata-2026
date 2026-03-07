@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { AddressSearch } from "@/components/address-search";
 
 export default function Home() {
   const router = useRouter();
@@ -124,6 +125,20 @@ export default function Home() {
                     </Button>
                   </>
                 )}
+              </CardContent>
+            </Card>
+            <Separator className="my-2" />
+
+            <Card className="overflow-visible">
+              <CardHeader>
+                <CardTitle className="text-xl">Search by Address</CardTitle>
+                <CardDescription>
+                  Find a specific property and explore 9 nearby properties with
+                  Street View and AI analysis.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-visible">
+                <AddressSearch />
               </CardContent>
             </Card>
           </div>

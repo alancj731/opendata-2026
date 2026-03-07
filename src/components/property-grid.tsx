@@ -6,13 +6,14 @@ import { PropertyCard } from "./property-card";
 interface PropertyGridProps {
   properties: Property[];
   onEvaluate: (evaluation: Evaluation) => void;
+  selectedRollNumber?: string;
 }
 
-export function PropertyGrid({ properties, onEvaluate }: PropertyGridProps) {
+export function PropertyGrid({ properties, onEvaluate, selectedRollNumber }: PropertyGridProps) {
   if (properties.length === 0) {
     return (
       <div className="py-12 text-center text-muted-foreground">
-        No properties found for this neighbourhood.
+        No properties found.
       </div>
     );
   }
@@ -25,6 +26,13 @@ export function PropertyGrid({ properties, onEvaluate }: PropertyGridProps) {
           property={property}
           index={index}
           onEvaluate={onEvaluate}
+          label={
+            selectedRollNumber
+              ? property.roll_number === selectedRollNumber
+                ? "selected"
+                : "nearby"
+              : undefined
+          }
         />
       ))}
     </div>

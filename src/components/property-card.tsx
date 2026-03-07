@@ -17,9 +17,10 @@ interface PropertyCardProps {
   property: Property;
   index: number;
   onEvaluate: (evaluation: Evaluation) => void;
+  label?: "selected" | "nearby";
 }
 
-export function PropertyCard({ property, index, onEvaluate }: PropertyCardProps) {
+export function PropertyCard({ property, index, onEvaluate, label }: PropertyCardProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
@@ -44,7 +45,16 @@ export function PropertyCard({ property, index, onEvaluate }: PropertyCardProps)
     : null;
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden ${label === "selected" ? "ring-2 ring-[#003C6E]" : ""}`}>
+      {label && (
+        <div className={`px-4 py-1.5 text-xs font-semibold ${
+          label === "selected"
+            ? "bg-[#003C6E] text-white"
+            : "bg-amber-100 text-amber-800"
+        }`}>
+          {label === "selected" ? "Selected Property" : "Nearby Property"}
+        </div>
+      )}
       {property.centroid_lat && property.centroid_lon ? (
         <StreetView
           lat={property.centroid_lat}

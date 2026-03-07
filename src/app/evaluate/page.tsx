@@ -13,7 +13,13 @@ import { Separator } from "@/components/ui/separator";
 function EvaluateContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const mode = searchParams.get("mode") || "region";
   const region = searchParams.get("region") || "";
+  const rollNumber = searchParams.get("roll") || "";
+  const lat = searchParams.get("lat") || "";
+  const lon = searchParams.get("lon") || "";
+  const address = searchParams.get("address") || "";
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [evaluations, setEvaluations] = useState<Map<string, Evaluation>>(
@@ -23,19 +29,46 @@ function EvaluateContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!region) return;
-    setLoading(true);
-    fetch(
-      `/api/properties?region=${encodeURIComponent(region)}&count=10`
-    )
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.error) throw new Error(json.error);
-        setProperties(json.data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [region]);
+    if (mode === "address" && lat && lon && rollNumber) {
+      // Address search mode: fetch the selected property + 9 nearby
+      setLoading(true);
+      Promise.all([
+        fetch(`/api/search?q=${encodeURIComponent(address)}`).then((r) =>
+          r.json()
+        ),
+        fetch(
+          `/api/nearby?lat=${lat}&lon=${lon}&exclude=${encodeURIComponent(rollNumber)}`
+        ).then((r) => r.json()),
+      ])
+        .then(([searchJson, nearbyJson]) => {
+          const selected = (searchJson.data as Property[])?.find(
+            (p) => p.roll_number === rollNumber
+          );
+          const nearby: Property[] = nearbyJson.data || [];
+          if (selected) {
+            setProperties([selected, ...nearby]);
+          } else {
+            setProperties(nearby);
+          }
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    } else if (mode === "region" && region) {
+      setLoading(true);
+      fetch(
+        `/api/properties?region=${encodeURIComponent(region)}&count=10`
+      )
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.error) throw new Error(json.error);
+          setProperties(json.data);
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [mode, region, rollNumber, lat, lon, address]);
 
   const handleEvaluate = useCallback((evaluation: Evaluation) => {
     setEvaluations((prev) => {
@@ -48,11 +81,15 @@ function EvaluateContent() {
   const evaluatedCount = evaluations.size;
   const totalCount = properties.length;
 
-  if (!region) {
+  const hasParams = mode === "address" ? !!(lat && lon) : !!region;
+
+  if (!hasParams) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground">No market region selected.</p>
+          <p className="text-muted-foreground">
+            No {mode === "address" ? "address" : "market region"} selected.
+          </p>
           <Button className="mt-4" onClick={() => router.push("/")}>
             Go Back
           </Button>
@@ -61,26 +98,34 @@ function EvaluateContent() {
     );
   }
 
+  const title =
+    mode === "address"
+      ? address
+      : region.replace(/^\d+,\s*/, "");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div>
-            <h1 className="text-xl font-bold">{region.replace(/^\d+,\s*/, "")}</h1>
+            <h1 className="text-xl font-bold">{title}</h1>
             <p className="text-sm text-muted-foreground">
               {evaluatedCount}/{totalCount} properties evaluated
+              {mode === "address" && " · Address search"}
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push("/")}>
-              Change Area
+              {mode === "address" ? "New Search" : "Change Area"}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-            >
-              Shuffle
-            </Button>
+            {mode === "region" && (
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Shuffle
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -116,6 +161,7 @@ function EvaluateContent() {
             <PropertyGrid
               properties={properties}
               onEvaluate={handleEvaluate}
+              selectedRollNumber={mode === "address" ? rollNumber : undefined}
             />
 
             <Separator />
