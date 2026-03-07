@@ -3,7 +3,7 @@ import { saveEvaluation, getEvaluationStats } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
-    const { roll_number, rating, comment } = await request.json();
+    const { roll_number, rating, comment, price_expectation } = await request.json();
 
     if (!roll_number || !rating || rating < 1 || rating > 5) {
       return NextResponse.json(
@@ -12,7 +12,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await saveEvaluation(roll_number, rating, comment || "");
+    await saveEvaluation(
+      roll_number,
+      rating,
+      comment || "",
+      price_expectation || null
+    );
     return NextResponse.json({ success: true });
   } catch (error) {
     const message =

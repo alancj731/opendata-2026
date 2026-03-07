@@ -10,13 +10,16 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StreetView } from "./street-view";
 import { useState } from "react";
 
 export interface EvaluationStats {
   avg_rating: number;
+  avg_price: number | null;
   count: number;
+  price_count: number;
 }
 
 interface PropertyCardProps {
@@ -36,17 +39,17 @@ export function PropertyCard({
 }: PropertyCardProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [priceExpectation, setPriceExpectation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
-  const handleRating = (value: number) => {
-    setRating(value);
-  };
 
   const handleSubmit = async () => {
     if (rating === 0) return;
     setSubmitting(true);
     try {
+      const priceValue = priceExpectation
+        ? parseInt(priceExpectation.replace(/,/g, ""), 10)
+        : null;
       const res = await fetch("/api/evaluations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,6 +57,7 @@ export function PropertyCard({
           roll_number: property.roll_number,
           rating,
           comment,
+          price_expectation: priceValue,
         }),
       });
       if (res.ok) {
@@ -112,19 +116,37 @@ export function PropertyCard({
 
       <CardContent className="space-y-3">
         {/* Previous Evaluation Stats */}
-        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm">
+        <div className="rounded-md bg-muted/50 px-3 py-2 text-sm space-y-1">
           {previousStats ? (
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-500">
-                {"★".repeat(Math.round(previousStats.avg_rating))}
-                {"☆".repeat(5 - Math.round(previousStats.avg_rating))}
-              </span>
-              <span className="font-medium">{previousStats.avg_rating}</span>
-              <span className="text-muted-foreground">
-                ({previousStats.count}{" "}
-                {previousStats.count === 1 ? "evaluation" : "evaluations"})
-              </span>
-            </div>
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-500">
+                  {"★".repeat(Math.round(previousStats.avg_rating))}
+                  {"☆".repeat(5 - Math.round(previousStats.avg_rating))}
+                </span>
+                <span className="font-medium">{previousStats.avg_rating}</span>
+                <span className="text-muted-foreground">
+                  ({previousStats.count}{" "}
+                  {previousStats.count === 1 ? "evaluation" : "evaluations"})
+                </span>
+              </div>
+              {previousStats.avg_price ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Avg. expected price:</span>
+                  <span className="font-semibold text-green-700">
+                    ${previousStats.avg_price.toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground">
+                    ({previousStats.price_count}{" "}
+                    {previousStats.price_count === 1 ? "submission" : "submissions"})
+                  </span>
+                </div>
+              ) : (
+                <span className="text-muted-foreground italic">
+                  No price expectations submitted yet
+                </span>
+              )}
+            </>
           ) : (
             <span className="text-muted-foreground italic">
               No previous evaluation found
@@ -186,7 +208,7 @@ export function PropertyCard({
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
-                    onClick={() => handleRating(star)}
+                    onClick={() => setRating(star)}
                     className={`text-2xl transition-colors ${
                       star <= rating
                         ? "text-yellow-500"
@@ -197,6 +219,22 @@ export function PropertyCard({
                     ★
                   </button>
                 ))}
+              </div>
+              <div className="mb-2">
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  Your price expectation ($)
+                </label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. 350000"
+                  value={priceExpectation}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, "");
+                    setPriceExpectation(val);
+                  }}
+                  className="h-9 text-sm"
+                />
               </div>
               <Textarea
                 placeholder="Share your thoughts on this property..."
