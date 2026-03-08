@@ -211,8 +211,23 @@ export default function Home() {
               City of Winnipeg Open Data
             </a>
           </span>
-          <span>
-            Powered by Google Gemini &middot; Google Maps &middot; Next.js
+          <span className="flex items-center gap-3">
+            <a
+              href="https://github.com/alancj731"
+              className="underline hover:text-foreground"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              My Git
+            </a>
+            <a
+              href="https://www.linkedin.com/in/winnipegdatafan/"
+              className="underline hover:text-foreground"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              LinkedIn
+            </a>
           </span>
         </div>
       </footer>
