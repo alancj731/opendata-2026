@@ -194,7 +194,7 @@ function EvaluateContent() {
 
             <Separator />
 
-            <AiInsights properties={properties} />
+            {/* <AiInsights properties={properties} /> */}
           </>
         )}
       </main>

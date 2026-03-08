@@ -176,38 +176,24 @@ export function PropertyCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-sm">
-          {property.building_type && (
-            <div>
-              <span className="text-muted-foreground">Type: </span>
-              <span className="font-medium">{property.building_type}</span>
-            </div>
-          )}
-          {property.year_built && (
-            <div>
-              <span className="text-muted-foreground">Built: </span>
-              <span className="font-medium">{property.year_built}</span>
-            </div>
-          )}
-          {property.total_living_area && (
-            <div>
-              <span className="text-muted-foreground">Area: </span>
-              <span className="font-medium">
-                {property.total_living_area} sq ft
-              </span>
-            </div>
-          )}
-          {property.rooms && (
-            <div>
-              <span className="text-muted-foreground">Rooms: </span>
-              <span className="font-medium">{property.rooms}</span>
-            </div>
-          )}
-          {property.zoning && (
-            <div>
-              <span className="text-muted-foreground">Zoning: </span>
-              <span className="font-medium">{property.zoning}</span>
-            </div>
-          )}
+          <div>
+            <span className="text-muted-foreground">Type: </span>
+            <span className="font-medium">{property.building_type || "N/A"}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Built: </span>
+            <span className="font-medium">{property.year_built || "N/A"}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Area: </span>
+            <span className="font-medium">
+              {property.total_living_area ? `${property.total_living_area} sq ft` : "N/A"}
+            </span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Rooms: </span>
+            <span className="font-medium">{property.rooms || "N/A"}</span>
+          </div>
         </div>
 
         {/* Assessment Value Comparison */}
